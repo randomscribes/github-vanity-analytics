@@ -171,19 +171,34 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--user', type=str, required=True)
     parser.add_argument('-p', '--password', type=str, required=True)
-    parser.add_argument('-r', '--regex', type=str, required=True)
+    parser.add_argument('-s', '--search_regex', type=str, required=True)
+
+    parser.add_argument('-r', '--repositories', nargs='+', type=str)
+    parser.add_argument('-o', '--organization', type=str)
+
     parsed_args = parser.parse_args()
     user = getattr(parsed_args, "user")
     password = getattr(parsed_args, "password")
-    regex = getattr(parsed_args, "regex")
-
+    regex = getattr(parsed_args, "search_regex")
+    repositories_to_search = getattr(parsed_args, "repositories")
+    organization = getattr(parsed_args, "organization")
 
     stats = {}
-    repos = list_github_repositories(username=user, auth=(user, password))
+    if organization:
+        repos = list_github_repositories(organization=organization, auth=(user, password))
+        repo_owner = organization
+    else:
+        repos = list_github_repositories(username=user, auth=(user, password))
+        repo_owner = user
+
+    git_repo = None
 
     for repo in repos:
+        # skip the repos that we don't want to search
+        if repositories_to_search and repo["name"] not in repositories_to_search:
+            continue
         # go through each commit find what we are looking for
-        git_repo = GitHubVanityAnalytics(user, repo["name"], user, password)
+        git_repo = GitHubVanityAnalytics(repo_owner, repo["name"], user, password)
 
         # find each file that we care about
         found_files = git_repo.search_for_file(
@@ -191,8 +206,8 @@ def main():
         for file_found in found_files:
             commits = git_repo.get_commits(
                 path=file_found['path'],
-                since=datetime.datetime(2012, 1, 1).isoformat(),
-                until=datetime.datetime(2015, 4, 1).isoformat()
+                since=datetime.datetime(2015, 1, 1).isoformat(),
+                until=datetime.datetime(2015, 5, 1).isoformat()
             )
 
             for commit in commits:
@@ -201,7 +216,8 @@ def main():
     
     pprint.pprint(stats)
 
-    pprint.pprint(git_repo.get_rate_limits())
+    if git_repo:
+        pprint.pprint(git_repo.get_rate_limits())
     
 
 
