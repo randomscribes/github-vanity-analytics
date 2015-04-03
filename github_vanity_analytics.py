@@ -162,6 +162,7 @@ class GitHubVanityAnalytics(object):
 
         return stats_to_add
 
+
 def main():
     """
     Main program
@@ -175,6 +176,7 @@ def main():
 
     parser.add_argument('-r', '--repositories', nargs='+', type=str)
     parser.add_argument('-o', '--organization', type=str)
+    parser.add_argument('--start_path', type=str)
 
     parsed_args = parser.parse_args()
     user = getattr(parsed_args, "user")
@@ -182,6 +184,7 @@ def main():
     regex = getattr(parsed_args, "search_regex")
     repositories_to_search = getattr(parsed_args, "repositories")
     organization = getattr(parsed_args, "organization")
+    start_path = getattr(parsed_args, "start_path") or ""
 
     stats = {}
     if organization:
@@ -202,7 +205,7 @@ def main():
 
         # find each file that we care about
         found_files = git_repo.search_for_file(
-            regex=regex, path="", recursive=True, file_type="file")
+            regex=regex, path=start_path, recursive=True, file_type="file")
         for file_found in found_files:
             commits = git_repo.get_commits(
                 path=file_found['path'],
@@ -218,7 +221,6 @@ def main():
 
     if git_repo:
         pprint.pprint(git_repo.get_rate_limits())
-    
 
 
 if __name__ == "__main__":
