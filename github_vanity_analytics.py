@@ -1,5 +1,5 @@
 '''
-Testing script
+Command Line Script
 '''
 import datetime
 import logging
